@@ -42,18 +42,18 @@ async fn tokio_select(
 ) {
     tokio::select! {
         biased;
-        Some(str) = rx.recv() => {
-            println!("[{:?}] Received: {:?}", start.elapsed(), str);
-            buffer.push(str);
-            if buffer.len() > 100 {
-                println!("[{:?}] size trigger", start.elapsed());
+        _ = ticker.tick() => {
+            println!("[{:?}] time trigger, size = {}", start.elapsed(), buffer.len());
+            if buffer.len() != 0 {
                 sleep_2_sec(start).await;
                 buffer.clear();
             }
         }
-        _ = ticker.tick() => {
-            if buffer.len() != 0 {
-                println!("[{:?}] time trigger", start.elapsed());
+        Some(str) = rx.recv() => {
+            println!("[{:?}] Received: {:?}", start.elapsed(), str);
+            buffer.push(str);
+            if buffer.len() > 200 {
+                println!("[{:?}] size trigger", start.elapsed());
                 sleep_2_sec(start).await;
                 buffer.clear();
             }
@@ -66,12 +66,3 @@ async fn sleep_2_sec(start: std::time::Instant) {
     tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
     println!("[{:?}] Finished flushing", start.elapsed());
 }
-
-//     0 ------------------------ 1 ------------------------ 2 ------------------------ 
-//     |                                       |*|
-//     | --------- Flush Task Awaits --------- |*| --------- Flush Task Awaits ---------
-//     |                                       |*|
-//                                              ⬆
-//                                      Small time interval
-//                               Might allow a few point to be pushed
-//
