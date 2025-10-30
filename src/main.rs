@@ -1,4 +1,4 @@
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     let start = std::time::Instant::now();
 
@@ -26,7 +26,7 @@ async fn main() {
     });
 
     let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(1));
-    ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
     let mut buffer = Vec::new();
 
     loop {
@@ -45,7 +45,7 @@ async fn tokio_select(
         _ = ticker.tick() => {
             println!("[{:?}] time trigger, size = {}", start.elapsed(), buffer.len());
             if buffer.len() != 0 {
-                sleep_2_sec(start).await;
+                sleep_x_sec(start).await;
                 buffer.clear();
             }
         }
@@ -54,14 +54,14 @@ async fn tokio_select(
             buffer.push(str);
             if buffer.len() > 200 {
                 println!("[{:?}] size trigger", start.elapsed());
-                sleep_2_sec(start).await;
+                sleep_x_sec(start).await;
                 buffer.clear();
             }
         }
     }
 }
 
-async fn sleep_2_sec(start: std::time::Instant) {
+async fn sleep_x_sec(start: std::time::Instant) {
     println!("[{:?}] Starting flush", start.elapsed());
     tokio::time::sleep(tokio::time::Duration::from_millis(1500)).await;
     println!("[{:?}] Finished flushing", start.elapsed());
